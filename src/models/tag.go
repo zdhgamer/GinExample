@@ -2,6 +2,8 @@ package models
 
 import (
 	"fmt"
+	"github.com/jinzhu/gorm"
+	"time"
 )
 
 type Tag struct {
@@ -12,12 +14,22 @@ type Tag struct {
 	State      int    `json:"state"`
 }
 
-func GetTags(pageNum int,pageSize int,maps interface{})(tags []Tag){
+func (tag *Tag) BeforeCreate(scope *gorm.Scope) error {
+	scope.SetColumn("CreatedOn", time.Now().Unix())
+	return nil
+}
+
+func (tag *Tag) BeforeUpdate(scope *gorm.Scope) error {
+	scope.SetColumn("ModifiedOn", time.Now().Unix())
+	return nil
+}
+
+func GetTags(pageNum int, pageSize int, maps interface{}) (tags []Tag) {
 	db.Where(maps).Offset(pageNum).Limit(pageSize).Find(&tags)
 	return
 }
 
-func GetTagTotal(maps interface{})(count int)  {
+func GetTagTotal(maps interface{}) (count int) {
 	db.Model(&Tag{}).Where(maps).Count(&count)
 	return
 }
@@ -32,17 +44,49 @@ func ExistTagByName(name string) bool {
 	return false
 }
 
-func AddTag(name string, state int, createdBy string) bool{
-	tag :=&Tag{
-		Name : name,
-		State : state,
-		CreatedBy : createdBy,
+func ExistTagByID(id int) bool {
+	var tag Tag
+	err := db.Select("id").Where("id = ?", id).First(&tag).Error
+	if err != nil {
+		return false
+	} else {
+		if tag.ID > 0 {
+			return true
+		} else {
+			return false
+		}
+	}
+}
+
+func AddTag(name string, state int, createdBy string) bool {
+	tag := &Tag{
+		Name:      name,
+		State:     state,
+		CreatedBy: createdBy,
 	}
 	err := db.Create(tag).Error
-	if err!=nil {
-		fmt.Printf("插入tag出错，%v",err)
+	if err != nil {
+		fmt.Printf("插入tag出错，%v", err)
 		return false
 	}
 
 	return db.NewRecord(tag)
+}
+
+func DeleteTag(id int) bool {
+	err := db.Where("id = ?", id).Delete(&Tag{}).Error
+	if err != nil {
+		return false
+	} else {
+		return true
+	}
+}
+
+func EditTag(id int, data interface{}) bool {
+	err := db.Model(&Tag{}).Where("id = ?", id).Update(data).Error
+	if err != nil {
+		return false
+	} else {
+		return true
+	}
 }

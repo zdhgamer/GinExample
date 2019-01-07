@@ -1,0 +1,4 @@
+[INFO][auth.go:42]2019/01/07 17:48:21 [Username.Required Can not be empty]
+[INFO][auth.go:42]2019/01/07 17:48:21 [Password.Required Can not be empty]
+[INFO][auth.go:42]2019/01/07 17:48:46 [Password.Required Can not be empty]
+[INFO][auth.go:42]2019/01/07 17:49:44 [Password.Required Can not be empty]
