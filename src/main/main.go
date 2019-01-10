@@ -5,6 +5,11 @@ import (
 	"fmt"
 	"../setting"
 	"../routers"
+	"os"
+	"os/signal"
+	"log"
+	"context"
+	"time"
 )
 
 func main() {
@@ -20,5 +25,22 @@ func main() {
 		MaxHeaderBytes:1<<20,
 	}
 
-	s.ListenAndServe()
+	err := s.ListenAndServe()
+	if err!=nil {
+		fmt.Printf("start server err:%v",err)
+		panic(s)
+	}
+
+	//优雅的关闭服务器
+	quit := make(chan os.Signal)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	log.Println("Shutdown Server ...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	defer cancel()
+	if err := s.Shutdown(ctx); err != nil {
+		log.Fatal("Server Shutdown:", err)
+	}
+	log.Println("Server exist")
 }

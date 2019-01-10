@@ -1,11 +1,12 @@
 package models
 
-import(
+import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/mysql"
 	"../setting"
 	"log"
 	"fmt"
+	"time"
 )
 
 type Model struct {
@@ -15,20 +16,19 @@ type Model struct {
 	DeletedOn  int `json:"deleted_on"`
 }
 
-
 var (
-	db *gorm.DB
-	dbType string
-	dbName string
-	user string
-	passWord string
-	host string
+	db          *gorm.DB
+	dbType      string
+	dbName      string
+	user        string
+	passWord    string
+	host        string
 	tablePrefix string
 )
 
-func init()  {
-	sec,err := setting.Cfg.GetSection("database")
-	if err!=nil {
+func init() {
+	sec, err := setting.Cfg.GetSection("database")
+	if err != nil {
 		log.Fatal(2, "Fail to get section 'database': %v", err)
 	}
 	dbType = sec.Key("TYPE").String()
@@ -38,8 +38,8 @@ func init()  {
 	host = sec.Key("HOST").String()
 	tablePrefix = sec.Key("TABLE_PREFIX").String()
 
-	db,err = gorm.Open(dbType,fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",user,passWord,host,dbName))
-	if err!=nil {
+	db, err = gorm.Open(dbType, fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local", user, passWord, host, dbName))
+	if err != nil {
 		log.Println(err)
 	}
 
@@ -50,8 +50,34 @@ func init()  {
 	db.SingularTable(true)
 	db.DB().SetMaxIdleConns(10)
 	db.DB().SetMaxOpenConns(100)
+
+	db.Callback().Create().Replace("gorm:update_time_stamp", updateTimeStampForCreateCallback)
+	db.Callback().Update().Replace("gorm:update_time_stamp", updateTimeStampForUpdateCallback)
 }
 
-func CloseDB()  {
+func updateTimeStampForCreateCallback(scope *gorm.Scope) {
+	if !scope.HasError() {
+		nowTime := time.Now().Unix()
+		if createTimeFiled, ok := scope.FieldByName("CreatedOn"); ok {
+			if createTimeFiled.IsBlank {
+				createTimeFiled.Set(nowTime)
+			}
+		}
+
+		if modifyTimeField, ok := scope.FieldByName("ModifiedOn"); ok {
+			if modifyTimeField.IsBlank {
+				modifyTimeField.Set(nowTime)
+			}
+		}
+	}
+}
+
+func updateTimeStampForUpdateCallback(scope *gorm.Scope) {
+	if _, ok := scope.Get("gorm:update_column"); ok {
+		scope.SetColumn("ModifiedOn", time.Now().Unix())
+	}
+}
+
+func CloseDB() {
 	defer db.Close()
 }
