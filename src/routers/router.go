@@ -3,10 +3,11 @@ package routers
 import (
 	"github.com/gin-gonic/gin"
 	"../setting"
-	"../middleware"
 	"github.com/swaggo/gin-swagger"
 	"github.com/swaggo/gin-swagger/swaggerFiles"
 	_ "../docs"
+	"../upload"
+	"net/http"
 )
 
 func InitRouter() *gin.Engine {
@@ -15,7 +16,11 @@ func InitRouter() *gin.Engine {
 	r.Use(gin.Recovery())
 	gin.SetMode(setting.ServerSetting.RunMode)
 
+	initStaticRouter(r)
+
 	initSwaggerRouter(r)
+
+	initUploadRouter(r)
 
 	initAuthRouter(r)
 
@@ -26,20 +31,32 @@ func InitRouter() *gin.Engine {
 	return r
 }
 
-func initSwaggerRouter(r *gin.Engine)  {
+func initStaticRouter(r *gin.Engine) {
+	//路径映射
+	r.StaticFS("src/runtime/upload/images", http.Dir(upload.GetImageFullPath()))
+}
+
+func initSwaggerRouter(r *gin.Engine) {
 	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+}
+
+func initUploadRouter(r *gin.Engine) {
+	apiUpload := r.Group("api/upload")
+	{
+		apiUpload.POST("uploadImage", UploadImage)
+	}
 }
 
 func initAuthRouter(r *gin.Engine) {
 	apiAuth := r.Group("/api/auth")
 	{
-		apiAuth.GET("/auth",GetAuth)
+		apiAuth.GET("/auth", GetAuth)
 	}
 }
 
 func initArticleRouter(r *gin.Engine) {
 	apiArticle := r.Group("/api/articles")
-	r.Use(middleware.JWT())
+	//r.Use(middleware.JWT())
 	{
 		apiArticle.GET("/getOne/:id", GetArticle)
 		apiArticle.GET("/getList", GetArticles)
@@ -51,7 +68,7 @@ func initArticleRouter(r *gin.Engine) {
 
 func initRatRouter(r *gin.Engine) {
 	apiTag := r.Group("/api/tags")
-	r.Use(middleware.JWT())
+	//r.Use(middleware.JWT())
 	{
 		apiTag.GET("/getList", GetTags)
 		apiTag.GET("/addOne", AddTag)
