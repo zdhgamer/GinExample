@@ -19,6 +19,8 @@ func GetAuth(c *gin.Context) {
 	username := c.Query("username")
 	password := c.Query("password")
 
+	logging.Info("用户登录",username,password)
+
 	valid := validation.Validation{}
 	a := auth{Username: username, Password: password}
 	ok, _ := valid.Valid(&a)

@@ -13,9 +13,9 @@ func InitRouter() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
-	gin.SetMode(setting.RunMode)
+	gin.SetMode(setting.ServerSetting.RunMode)
 
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	initSwaggerRouter(r)
 
 	initAuthRouter(r)
 
@@ -23,9 +23,11 @@ func InitRouter() *gin.Engine {
 
 	initRatRouter(r)
 
-
-
 	return r
+}
+
+func initSwaggerRouter(r *gin.Engine)  {
+	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 }
 
 func initAuthRouter(r *gin.Engine) {
