@@ -8,6 +8,7 @@ import (
 	_ "../docs"
 	"../upload"
 	"net/http"
+	"../middleware"
 )
 
 func InitRouter() *gin.Engine {
@@ -56,7 +57,7 @@ func initAuthRouter(r *gin.Engine) {
 
 func initArticleRouter(r *gin.Engine) {
 	apiArticle := r.Group("/api/articles")
-	//r.Use(middleware.JWT())
+	r.Use(middleware.JWT())
 	{
 		apiArticle.GET("/getOne/:id", GetArticle)
 		apiArticle.GET("/getList", GetArticles)
@@ -68,7 +69,7 @@ func initArticleRouter(r *gin.Engine) {
 
 func initRatRouter(r *gin.Engine) {
 	apiTag := r.Group("/api/tags")
-	//r.Use(middleware.JWT())
+	r.Use(middleware.JWT())
 	{
 		apiTag.GET("/getList", GetTags)
 		apiTag.GET("/addOne", AddTag)

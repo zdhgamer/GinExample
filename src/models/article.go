@@ -34,9 +34,14 @@ func GetArticles(pageNum int, pageSize int, maps interface{}) (articles []Articl
 	return
 }
 
-func GetArticleByID(id int) (article Article) {
-	db.Where("id = ?", id).First(&article)
-	db.Model(&article).Related(&article.Tag)
+func GetArticleByID(id int) (article Article, err error) {
+	err = db.Where("id = ?", id).First(&article).Error
+	if err != nil {
+		return
+	} else {
+		db.Model(&article).Related(&article.Tag)
+	}
+
 	return
 }
 

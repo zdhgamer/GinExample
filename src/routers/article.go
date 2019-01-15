@@ -10,35 +10,37 @@ import (
 	"log"
 	"../util"
 	"../setting"
+	"../reqres"
 )
 
 //获取文章
 func GetArticle(c *gin.Context) {
-	id := com.StrTo(c.Param("id")).MustInt()
 
+	rr := reqres.Gin{}
+
+	id := com.StrTo(c.Param("id")).MustInt()
 	valid := validation.Validation{}
 	valid.Min(id, 1, "id").Message("ID必须大于0")
 
-	code := e.INVALID_PARAMS
-	var data interface{}
-	if ! valid.HasErrors() {
-		if models.ExistArticleByID(id) {
-			data = models.GetArticleByID(id)
-			code = e.SUCCESS
-		} else {
-			code = e.ERROR_NOT_EXIST_ARTICLE
-		}
-	} else {
-		for _, err := range valid.Errors {
-			log.Fatalf("%v", err)
-		}
+	if valid.HasErrors() {
+		reqres.MarkError(valid.Errors)
+		rr.Response(http.StatusOK, e.INVALID_PARAMS, nil)
+		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"code": code,
-		"msg":  e.GetMsg(code),
-		"data": data,
-	})
+	exist := models.ExistArticleByID(id)
+	if !exist {
+		rr.Response(http.StatusOK, e.ERROR_NOT_EXIST_ARTICLE, nil)
+		return
+	}
+
+	article, err := models.GetArticleByID(id)
+	if err != nil {
+		rr.Response(http.StatusOK, e.ERROR_GET_ARTICLE_FAIL, nil)
+		return
+	}
+
+	rr.Response(http.StatusOK, e.SUCCESS, article)
 }
 
 //获取多个

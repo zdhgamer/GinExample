@@ -39,11 +39,20 @@ type Database struct {
 	TablePrefix string
 }
 
+type Redis struct {
+	Host        string
+	Password    string
+	MaxIdle     int
+	MaxActive   int
+	IdleTimeout time.Duration
+}
+
 var (
 	Cfg             *ini.File
 	AppSetting      = &App{}
 	ServerSetting   = &Server{}
 	DatabaseSetting = &Database{}
+	RedisSetting    = &Redis{}
 )
 
 func init() {
@@ -55,6 +64,7 @@ func init() {
 	LoadApp()
 	LoadServer()
 	LoadDataBase()
+	LoadRedis()
 }
 
 func LoadApp() {
@@ -64,7 +74,6 @@ func LoadApp() {
 	}
 	AppSetting.ImageMaxSize = AppSetting.ImageMaxSize * 1024 * 1024
 }
-
 
 func LoadServer() {
 	err := Cfg.Section("server").MapTo(ServerSetting)
@@ -76,9 +85,17 @@ func LoadServer() {
 	ServerSetting.WriteTimeout = ServerSetting.ReadTimeout * time.Second
 }
 
-func LoadDataBase()  {
+func LoadDataBase() {
 	err := Cfg.Section("database").MapTo(DatabaseSetting)
 	if err != nil {
 		log.Fatalf("Cfg.MapTo DatabaseSetting err: %v", err)
 	}
+}
+
+func LoadRedis() {
+	err := Cfg.Section("redis").MapTo(RedisSetting)
+	if err != nil {
+		log.Fatalf("Cfg.MapTo RedisSetting err: %v", err)
+	}
+	RedisSetting.IdleTimeout = RedisSetting.IdleTimeout * time.Second
 }
